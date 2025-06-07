@@ -55,6 +55,8 @@ export interface Event {
   is_active: boolean
   created_at: string
   updated_at: string
+  organizer_profile_id: string
+  category?: string
 }
 
 export interface Ticket {
@@ -67,3 +69,7 @@ export interface Ticket {
   status: "active" | "cancelled" | "used"
   created_at: string
 }
+
+
+
+

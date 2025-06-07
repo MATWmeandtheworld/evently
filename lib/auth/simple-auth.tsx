@@ -66,54 +66,57 @@ export function SimpleAuthProvider({ children }: { children: React.ReactNode }) 
   }
 
   const signUp = async (email: string, password: string, fullName: string, role: string) => {
-    try {
-      const trimmedEmail = email.toLowerCase().trim()
+  try {
+    const trimmedEmail = email.toLowerCase().trim()
 
-      // Check if user already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("email", trimmedEmail)
-        .maybeSingle()
+    // Check if user already exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", trimmedEmail)
+      .maybeSingle()
 
-      if (checkError) {
-        console.error("Error checking existing user:", checkError)
-        return { error: "Failed to check existing user" }
-      }
-
-      if (existingUser) {
-        return { error: "User with this email already exists" }
-      }
-
-      // Create new user directly in database
-      const { data, error } = await supabase
-        .from("users")
-        .insert({
-          email: trimmedEmail,
-          full_name: fullName.trim(),
-          role: role as "admin" | "organizer" | "attendee",
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error("Registration error:", error)
-        return { error: "Failed to create account. Please try again." }
-      }
-
-      if (!data) {
-        return { error: "Failed to create account" }
-      }
-
-      // Auto sign in the new user
-      setUser(data)
-      localStorage.setItem("evently_user", JSON.stringify(data))
-      return {}
-    } catch (error) {
-      console.error("Signup error:", error)
-      return { error: "An unexpected error occurred" }
+    if (checkError) {
+      console.error("Error checking existing user:", checkError)
+      return { error: "Failed to check existing user" }
     }
+
+    if (existingUser) {
+      return { error: "User with this email already exists" }
+    }
+
+    // Create new user directly in database (now includes password)
+    const { data, error } = await supabase
+      .from("users")
+      .insert({
+        email: trimmedEmail,
+        password: password, // <-- add this line
+        full_name: fullName.trim(),
+        role: role as "admin" | "organizer" | "attendee",
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Registration error:", error)
+      return { error: error.message || "Failed to create account. Please try again." }
+    }
+
+    if (!data) {
+      return { error: "Failed to create account" }
+    }
+
+    // Auto sign in the new user
+    setUser(data)
+    localStorage.setItem("evently_user", JSON.stringify(data))
+    return {}
+  } catch (error: any) {
+    console.error("Signup error:", error)
+    return { error: error.message || "An unexpected error occurred" }
   }
+}
+
+ 
 
   const signOut = async () => {
     setUser(null)

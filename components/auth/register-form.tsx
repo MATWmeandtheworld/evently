@@ -134,16 +134,15 @@ export function RegisterForm() {
             <Label htmlFor="role">Role</Label>
             <Select
               value={formData.role}
-              onValueChange={(value) => handleInputChange("role", value)}
+              onValueChange={(value: string) => handleInputChange("role", value)}
               disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select your role" />
+              <SelectValue placeholder="Select your role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="attendee">Attendee - Browse and book events</SelectItem>
-                <SelectItem value="organizer">Organizer - Create and manage events</SelectItem>
-                <SelectItem value="admin">Admin - Manage venues and system</SelectItem>
+              <SelectItem value="attendee">Attendee - Browse and book events</SelectItem>
+              <SelectItem value="organizer">Organizer - Create and manage events</SelectItem>
               </SelectContent>
             </Select>
           </div>

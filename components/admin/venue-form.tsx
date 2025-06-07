@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import type { Venue } from "@/lib/types/database"
+import { useAuth } from "@/lib/auth/simple-auth-context"
 
 interface VenueFormProps {
   venue?: Venue | null
@@ -20,13 +20,14 @@ interface VenueFormProps {
 }
 
 export function VenueForm({ venue, onSuccess, onCancel }: VenueFormProps) {
+  const { user } = useAuth() // <-- Move this inside the component!
   const [formData, setFormData] = useState({
     name: venue?.name || "",
     description: venue?.description || "",
     location: venue?.location || "",
     capacity: venue?.capacity || 0,
     price_per_day: venue?.price_per_day || 0,
-    amenities: venue?.amenities || [],
+    amenities: (venue?.amenities as string[]) || [],
     image_url: venue?.image_url || "",
     is_active: venue?.is_active ?? true,
   })
@@ -37,27 +38,32 @@ export function VenueForm({ venue, onSuccess, onCancel }: VenueFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setError("")
 
     try {
-      if (venue) {
-        // Update existing venue
-        DummyDataStore.updateVenue(venue.id, formData)
-      } else {
-        // Create new venue
-        DummyDataStore.addVenue({
-          ...formData,
-          created_by: "550e8400-e29b-41d4-a716-446655440001", // Default admin ID for prototype
-        })
-      }
+  if (!user?.id) {
+    setError("You must be logged in as an admin to create a venue.")
+    setLoading(false)
+    return
+  }
 
-      onSuccess()
-    } catch (error) {
-      setError("An unexpected error occurred")
-    } finally {
-      setLoading(false)
-    }
+  if (venue) {
+    await DataStore.updateVenue(venue.id, formData)
+  } else {
+    await DataStore.addVenue({
+      ...formData,
+      created_by: user.id,
+    })
+  }
+  setError("") // <-- Clear error on success
+  onSuccess()
+} catch (error: any) {
+  setError(error?.message || JSON.stringify(error) || "An unexpected error occurred")
+} finally {
+  setLoading(false)
+}
   }
 
   const addAmenity = () => {
@@ -202,7 +208,7 @@ export function VenueForm({ venue, onSuccess, onCancel }: VenueFormProps) {
         <Switch
           id="is_active"
           checked={formData.is_active}
-          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+          onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_active: checked })}
         />
         <Label htmlFor="is_active" className="font-medium">
           Active (visible to organizers)
@@ -210,7 +216,7 @@ export function VenueForm({ venue, onSuccess, onCancel }: VenueFormProps) {
       </div>
 
       <div className="flex justify-end space-x-3 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
         <Button type="submit" disabled={loading} className="font-medium">

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,8 +12,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import type { Event, Venue } from "@/lib/types/database"
+import { createClient } from "@/lib/supabase/client" // ADD THIS
+import { useAuth } from "@/lib/auth/simple-auth-context" // ADD THIS
 
 interface EventFormProps {
   event?: Event | null
@@ -22,6 +23,7 @@ interface EventFormProps {
   onSuccess: () => void
   onCancel: () => void
 }
+const padTime = (t: string) => t.length === 5 ? t + ":00" : t;
 
 export function EventForm({ event, organizerId, onSuccess, onCancel }: EventFormProps) {
   const [venues, setVenues] = useState<Venue[]>([])
@@ -38,10 +40,15 @@ export function EventForm({ event, organizerId, onSuccess, onCancel }: EventForm
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const { user } = useAuth() // ADD THIS
+  const supabase = createClient() // ADD THIS
 
   useEffect(() => {
-    const venueData = DummyDataStore.getActiveVenues()
-    setVenues(venueData)
+    const fetchVenues = async () => {
+      const venueData = await DataStore.getActiveVenues()
+      setVenues(venueData)
+    }
+    fetchVenues()
   }, [])
 
   const selectedVenue = venues.find((v) => v.id === formData.venue_id)
@@ -104,26 +111,74 @@ export function EventForm({ event, organizerId, onSuccess, onCancel }: EventForm
     }
 
     try {
-      if (event) {
-        // Update existing event
-        DummyDataStore.updateEvent(event.id, {
-          ...formData,
-          event_date: format(formData.event_date, "yyyy-MM-dd"),
-        })
-      } else {
-        // Create new event
-        DummyDataStore.addEvent({
-          ...formData,
-          organizer_id: organizerId,
-          event_date: format(formData.event_date, "yyyy-MM-dd"),
-          current_attendees: 0,
-          is_active: true,
-        })
+      let organizerProfileId = organizerId
+
+      // Only fetch if creating a new event
+      if (!event) {
+        // Ensure user is available
+        if (!user) {
+          setError("You must be logged in to create an event.")
+          setLoading(false)
+          return
+        }
+        // Fetch organizer profile for the current user
+        let { data: profile, error: profileError } = await supabase
+          .from("organizer_profiles")
+          .select("id")
+          .eq("user_id", user.id) // safe: user is not null here
+          .single()
+
+        // If not found, create it
+        if (profileError || !profile) {
+          const { data: newProfile, error: createError } = await supabase
+            .from("organizer_profiles")
+            .insert([{ user_id: user.id }])
+            .select("id")
+            .single()
+          if (createError || !newProfile) {
+            setError("Could not create your organizer profile.")
+            setLoading(false)
+            return
+          }
+          profile = newProfile
+        }
+        organizerProfileId = profile.id
       }
 
+      if (event) {
+        // Update existing event
+        if (event) {
+          // Update existing event
+          await DataStore.updateEvent(event.id, {
+            ...formData,
+            event_date: format(formData.event_date, "yyyy-MM-dd"),
+            start_time: padTime(formData.start_time),
+            end_time: padTime(formData.end_time),
+          })
+        } else {
+          // Create new event with all required fields
+          await DataStore.addEvent({
+            organizer_id: user!.id,
+            organizer_profile_id: organizerProfileId,
+            venue_id: formData.venue_id,
+            event_date: format(formData.event_date, "yyyy-MM-dd"),
+            start_time: padTime(formData.start_time),
+            end_time: padTime(formData.end_time),
+            ticket_price: Number(formData.ticket_price),
+            max_attendees: Number(formData.max_attendees),
+            current_attendees: 0,
+            is_active: true,
+            name: formData.name,
+            description: formData.description,
+            category: undefined,
+            booking_request_id: undefined,
+          })
+        }
+      }
       onSuccess()
-    } catch (error) {
-      setError("An unexpected error occurred")
+    } catch (error: any) {
+      console.error("Event creation error:", error)
+      setError(error?.message || JSON.stringify(error) || "An unexpected error occurred")
     } finally {
       setLoading(false)
     }
@@ -165,7 +220,7 @@ export function EventForm({ event, organizerId, onSuccess, onCancel }: EventForm
 
       <div className="space-y-2">
         <Label className="font-medium">Venue *</Label>
-        <Select value={formData.venue_id} onValueChange={(value) => setFormData({ ...formData, venue_id: value })}>
+        <Select value={formData.venue_id} onValueChange={(value: any) => setFormData({ ...formData, venue_id: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select a venue" />
           </SelectTrigger>
@@ -198,7 +253,6 @@ export function EventForm({ event, organizerId, onSuccess, onCancel }: EventForm
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
                   !formData.event_date && "text-muted-foreground",
@@ -212,8 +266,8 @@ export function EventForm({ event, organizerId, onSuccess, onCancel }: EventForm
               <Calendar
                 mode="single"
                 selected={formData.event_date}
-                onSelect={(date) => setFormData({ ...formData, event_date: date })}
-                disabled={(date) => date < new Date()}
+                onSelect={(date: Date | undefined) => setFormData({ ...formData, event_date: date })}
+                disabled={(date: Date) => date < new Date()}
                 initialFocus
               />
             </PopoverContent>
@@ -302,7 +356,7 @@ export function EventForm({ event, organizerId, onSuccess, onCancel }: EventForm
       )}
 
       <div className="flex justify-end space-x-3 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" className="btn-outline" onClick={onCancel}>
           Cancel
         </Button>
         <Button type="submit" disabled={loading} className="font-medium">

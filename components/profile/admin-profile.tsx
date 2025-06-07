@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { User, Shield, LogOut, Save, Key } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 
 export function AdminProfile() {
   const { user, signOut } = useAuth()
@@ -20,7 +20,7 @@ export function AdminProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
-  const supabase = createClient()
+  // Use the imported supabase client directly
 
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",

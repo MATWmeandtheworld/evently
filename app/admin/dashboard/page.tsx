@@ -7,7 +7,7 @@ import { VenueManagement } from "@/components/admin/venue-management"
 import { BookingRequestManagement } from "@/components/admin/booking-request-management"
 import { AdminProfile } from "@/components/profile/admin-profile"
 import { useState, useEffect } from "react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import { AdminAnalyticsComponent } from "@/components/admin/admin-analytics"
 
 export default function AdminDashboard() {
@@ -19,16 +19,19 @@ export default function AdminDashboard() {
   })
 
   useEffect(() => {
-    const venues = DummyDataStore.getVenues()
-    const requests = DummyDataStore.getBookingRequests()
-    const events = DummyDataStore.getEvents()
+    const fetchStats = async () => {
+      const venues = await DataStore.getVenues()
+      const requests = await DataStore.getBookingRequests()
+      const events = await DataStore.getEvents()
 
-    setStats({
-      totalVenues: venues.length,
-      pendingRequests: requests.filter((r) => r.status === "pending").length,
-      activeEvents: events.filter((e) => e.is_active).length,
-      totalUsers: 12,
-    })
+      setStats({
+        totalVenues: venues.length,
+        pendingRequests: requests.filter((r) => r.status === "pending").length,
+        activeEvents: events.filter((e) => e.is_active).length,
+        totalUsers: 12,
+      })
+    }
+    fetchStats()
   }, [])
 
   return (

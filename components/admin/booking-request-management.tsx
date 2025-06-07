@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Check, X, Calendar, MapPin, Users, Clock } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import {
   Dialog,
   DialogContent,
@@ -17,15 +17,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
+import type { BookingRequest } from "@/lib/types/database"
+
 export function BookingRequestManagement() {
   const [requests, setRequests] = useState<any[]>([])
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
   const [adminNotes, setAdminNotes] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
 
-  const fetchRequests = () => {
-    const requestData = DummyDataStore.getBookingRequests()
-    const requestsWithDetails = requestData.map((request) => DummyDataStore.getBookingRequestWithDetails(request.id))
+  const fetchRequests = async () => {
+    const requestData: BookingRequest[] = await DataStore.getBookingRequests()
+    const requestsWithDetails = await Promise.all(
+      requestData.map((request: BookingRequest) =>
+        DataStore.getBookingRequestWithDetails(request.id)
+      )
+    )
     setRequests(requestsWithDetails.filter(Boolean))
   }
 
@@ -35,7 +41,7 @@ export function BookingRequestManagement() {
 
   const handleStatusUpdate = (requestId: string, status: "approved" | "rejected") => {
     setActionLoading(true)
-    DummyDataStore.updateBookingRequestStatus(requestId, status, adminNotes)
+    DataStore.updateBookingRequestStatus(requestId, status, adminNotes)
     fetchRequests()
     setSelectedRequest(null)
     setAdminNotes("")

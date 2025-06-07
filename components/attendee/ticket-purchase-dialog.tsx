@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, Users, CreditCard, Ticket } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface TicketPurchaseDialogProps {
@@ -65,7 +65,7 @@ export function TicketPurchaseDialog({ event, attendeeId, isOpen, onClose, onSuc
 
       // Create tickets for each quantity
       for (let i = 0; i < quantity; i++) {
-        DummyDataStore.addTicket({
+        DataStore.addTicket({
           event_id: event.id,
           attendee_id: attendeeId,
           purchase_date: new Date().toISOString(),

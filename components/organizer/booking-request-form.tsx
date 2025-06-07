@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import type { Venue } from "@/lib/types/database"
 
 interface BookingRequestFormProps {
@@ -81,7 +81,7 @@ export function BookingRequestForm({ venue, organizerId, onSuccess, onCancel }: 
     }
 
     try {
-      DummyDataStore.addBookingRequest({
+      DataStore.addBookingRequest({
         organizer_id: organizerId,
         venue_id: venue.id,
         event_name: formData.event_name.trim(),
@@ -162,11 +162,11 @@ export function BookingRequestForm({ venue, organizerId, onSuccess, onCancel }: 
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
-                mode="single"
-                selected={formData.event_date}
-                onSelect={(date) => setFormData({ ...formData, event_date: date })}
-                disabled={(date) => date < new Date()}
-                initialFocus
+              mode="single"
+              selected={formData.event_date}
+              onSelect={(date: Date | undefined) => setFormData({ ...formData, event_date: date })}
+              disabled={(date: Date) => date < new Date()}
+              initialFocus
               />
             </PopoverContent>
           </Popover>

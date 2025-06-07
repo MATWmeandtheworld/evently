@@ -8,7 +8,7 @@ import { EventManagement } from "@/components/organizer/event-management"
 import { BookingHistory } from "@/components/organizer/booking-history"
 import { OrganizerProfile } from "@/components/profile/organizer-profile"
 import { useState, useEffect } from "react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import { OrganizerAnalyticsComponent } from "@/components/organizer/organizer-analytics"
 
 export default function OrganizerDashboard() {
@@ -23,16 +23,19 @@ export default function OrganizerDashboard() {
   const organizerId = "550e8400-e29b-41d4-a716-446655440003"
 
   useEffect(() => {
-    const events = DummyDataStore.getEventsByOrganizer(organizerId)
-    const totalAttendees = events.reduce((sum, event) => sum + event.current_attendees, 0)
-    const revenue = events.reduce((sum, event) => sum + event.ticket_price * event.current_attendees, 0)
+    const fetchStats = async () => {
+      const events = await DataStore.getEventsByOrganizer(organizerId)
+      const totalAttendees = events.reduce((sum, event) => sum + event.current_attendees, 0)
+      const revenue = events.reduce((sum, event) => sum + event.ticket_price * event.current_attendees, 0)
 
-    setStats({
-      myEvents: events.length,
-      venueBookings: 2, // Mock data
-      totalAttendees,
-      revenue,
-    })
+      setStats({
+        myEvents: events.length,
+        venueBookings: 2, // Mock data
+        totalAttendees,
+        revenue,
+      })
+    }
+    fetchStats()
   }, [organizerId])
 
   return (
@@ -115,6 +118,7 @@ export default function OrganizerDashboard() {
 
           <TabsContent value="events">
             <EventManagement organizerId={organizerId} />
+            
           </TabsContent>
 
           <TabsContent value="bookings">
@@ -129,7 +133,12 @@ export default function OrganizerDashboard() {
             <OrganizerProfile />
           </TabsContent>
         </Tabs>
+        
       </div>
+      
     </div>
   )
+
+  console.log("Organizer Profile ID passed to EventManagement:", organizerId);
 }
+

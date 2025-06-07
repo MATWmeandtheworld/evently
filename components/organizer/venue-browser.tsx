@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MapPin, Users, DollarSign, Search, Calendar } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import type { Venue } from "@/lib/types/database"
 import { BookingRequestForm } from "./booking-request-form"
 import {
@@ -33,9 +33,12 @@ export function VenueBrowser({ organizerId }: VenueBrowserProps) {
   const [priceFilter, setPriceFilter] = useState("any")
 
   useEffect(() => {
-    const venueData = DummyDataStore.getActiveVenues()
-    setVenues(venueData)
-    setFilteredVenues(venueData)
+    const fetchVenues = async () => {
+      const venueData = await DataStore.getActiveVenues()
+      setVenues(venueData)
+      setFilteredVenues(venueData)
+    }
+    fetchVenues()
   }, [])
 
   useEffect(() => {
@@ -139,12 +142,12 @@ export function VenueBrowser({ organizerId }: VenueBrowserProps) {
             </Select>
 
             <Button
-              variant="outline"
               onClick={() => {
                 setSearchTerm("")
                 setCapacityFilter("any")
                 setPriceFilter("any")
               }}
+              className="border border-gray-300"
             >
               Clear Filters
             </Button>
@@ -194,12 +197,12 @@ export function VenueBrowser({ organizerId }: VenueBrowserProps) {
                     <p className="font-body text-sm font-medium mb-2">Amenities:</p>
                     <div className="flex flex-wrap gap-1">
                       {venue.amenities.slice(0, 4).map((amenity, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge key={index} className="text-xs">
                           {amenity}
                         </Badge>
                       ))}
                       {venue.amenities.length > 4 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge className="text-xs">
                           +{venue.amenities.length - 4} more
                         </Badge>
                       )}
@@ -251,12 +254,12 @@ export function VenueBrowser({ organizerId }: VenueBrowserProps) {
             </p>
             {venues.length > 0 && (
               <Button
-                variant="outline"
                 onClick={() => {
                   setSearchTerm("")
                   setCapacityFilter("any")
                   setPriceFilter("any")
                 }}
+                className="border border-gray-300"
               >
                 Clear All Filters
               </Button>

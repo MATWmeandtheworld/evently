@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Users, Clock } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 
 interface BookingHistoryProps {
   organizerId: string
@@ -14,12 +14,15 @@ export function BookingHistory({ organizerId }: BookingHistoryProps) {
   const [bookings, setBookings] = useState<any[]>([])
 
   useEffect(() => {
-    const bookingData = DummyDataStore.getBookingRequests()
-    const organizerBookings = bookingData.filter((booking) => booking.organizer_id === organizerId)
-    const bookingsWithDetails = organizerBookings.map((booking) =>
-      DummyDataStore.getBookingRequestWithDetails(booking.id),
-    )
-    setBookings(bookingsWithDetails.filter(Boolean))
+    const fetchBookings = async () => {
+      const bookingData = await DataStore.getBookingRequests()
+      const organizerBookings = bookingData.filter((booking) => booking.organizer_id === organizerId)
+      const bookingsWithDetails = await Promise.all(
+        organizerBookings.map((booking) => DataStore.getBookingRequestWithDetails(booking.id))
+      )
+      setBookings(bookingsWithDetails.filter(Boolean))
+    }
+    fetchBookings()
   }, [organizerId])
 
   const getStatusColor = (status: string) => {

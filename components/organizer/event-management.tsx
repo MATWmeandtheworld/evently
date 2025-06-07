@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Calendar, MapPin, Users, DollarSign, Ticket } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import type { Event } from "@/lib/types/database"
 import { EventForm } from "./event-form"
 import {
@@ -26,11 +26,13 @@ export function EventManagement({ organizerId }: EventManagementProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
-  const fetchEvents = () => {
-    const eventData = DummyDataStore.getEventsByOrganizer(organizerId)
-    const eventsWithDetails = eventData.map((event) => DummyDataStore.getEventWithVenue(event.id))
-    setEvents(eventsWithDetails.filter(Boolean))
-  }
+  const fetchEvents = async () => {
+  const eventData = await DataStore.getEventsByOrganizer(organizerId)
+  const eventsWithDetails = await Promise.all(
+    eventData.map((event) => DataStore.getEventWithVenue(event.id))
+  )
+  setEvents(eventsWithDetails.filter(Boolean))
+}
 
   useEffect(() => {
     fetchEvents()
@@ -112,7 +114,7 @@ export function EventManagement({ organizerId }: EventManagementProps) {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Badge className={status.color}>{status.label}</Badge>
-                  <Button variant="outline" size="sm" onClick={() => handleEditEvent(event)}>
+                  <Button variant="secondary" size="sm" onClick={() => handleEditEvent(event)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
@@ -166,11 +168,11 @@ export function EventManagement({ organizerId }: EventManagementProps) {
                   )}
 
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant={"outline"} size={"sm"} className="flex-1">
                       <Ticket className="mr-1 h-4 w-4" />
                       View Tickets
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant={"outline"} size={"sm"} className="flex-1">
                       <Users className="mr-1 h-4 w-4" />
                       Attendees
                     </Button>

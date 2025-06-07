@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, MapPin, Users, Ticket, Search, User } from "lucide-react"
 import { useState, useEffect } from "react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import { TicketPurchaseDialog } from "@/components/attendee/ticket-purchase-dialog"
 import { MyTickets } from "@/components/attendee/my-tickets"
 import { AttendeeProfile } from "@/components/profile/attendee-profile"
@@ -25,11 +25,29 @@ export default function AttendeeEvents() {
   // For prototype, we'll use a mock attendee ID
   const attendeeId = "550e8400-e29b-41d4-a716-446655440007"
 
-  const fetchEvents = () => {
-    const eventData = DummyDataStore.getEvents()
-    const eventsWithDetails = eventData
-      .filter((event) => event.is_active)
-      .map((event) => DummyDataStore.getEventWithVenue(event.id))
+  const fetchEvents = async () => {
+    interface Event {
+      id: string
+      name: string
+      description?: string
+      event_date: string
+      start_time: string
+      end_time: string
+      ticket_price: number
+      max_attendees: number
+      current_attendees: number
+      is_active: boolean
+      organizer_name: string
+      venue_name: string
+      venue_location: string
+    }
+
+    const eventData = await DataStore.getEvents()
+    const eventsWithDetails = await Promise.all(
+      eventData
+        .filter((event) => event.is_active)
+        .map((event) => DataStore.getEventWithVenue(event.id))
+    )
     setEvents(eventsWithDetails.filter(Boolean))
   }
 
@@ -178,7 +196,6 @@ export default function AttendeeEvents() {
                   </Select>
 
                   <Button
-                    variant="outline"
                     onClick={() => {
                       setSearchTerm("")
                       setCategoryFilter("all")
@@ -197,11 +214,11 @@ export default function AttendeeEvents() {
                 <Card key={event.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <Badge variant="secondary">{getEventCategory(event.name)}</Badge>
+                      <Badge>{getEventCategory(event.name)}</Badge>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-green-600">${event.ticket_price}</span>
                         {isEventSoldOut(event) && (
-                          <Badge variant="destructive" className="ml-2">
+                          <Badge className="ml-2 bg-red-600 text-white">
                             Sold Out
                           </Badge>
                         )}
@@ -269,7 +286,7 @@ export default function AttendeeEvents() {
                   </p>
                   {events.length > 0 && (
                     <Button
-                      variant="outline"
+                      className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                       onClick={() => {
                         setSearchTerm("")
                         setCategoryFilter("all")

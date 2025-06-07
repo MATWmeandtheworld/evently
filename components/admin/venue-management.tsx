@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2, MapPin, Users, DollarSign } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 import type { Venue } from "@/lib/types/database"
 import { VenueForm } from "./venue-form"
 import {
@@ -33,8 +33,8 @@ export function VenueManagement() {
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
-  const fetchVenues = () => {
-    const venueData = DummyDataStore.getVenues()
+  const fetchVenues = async () => {
+    const venueData = await DataStore.getVenues()
     setVenues(venueData)
   }
 
@@ -54,7 +54,7 @@ export function VenueManagement() {
   }
 
   const handleDeleteVenue = (venueId: string) => {
-    DummyDataStore.deleteVenue(venueId)
+    DataStore.deleteVenue(venueId)
     fetchVenues()
   }
 

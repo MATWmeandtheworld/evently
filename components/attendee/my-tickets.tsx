@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, MapPin, Users, Ticket, Download, QrCode } from "lucide-react"
-import { DummyDataStore } from "@/lib/data/dummy-data"
+import { DataStore } from "@/lib/data/DataStore"
 
 interface MyTicketsProps {
   attendeeId: string
@@ -15,15 +15,46 @@ export function MyTickets({ attendeeId }: MyTicketsProps) {
   const [tickets, setTickets] = useState<any[]>([])
 
   useEffect(() => {
-    const ticketData = DummyDataStore.getTicketsByAttendee(attendeeId)
-    const ticketsWithDetails = ticketData.map((ticket) => {
-      const event = DummyDataStore.getEventWithVenue(ticket.event_id)
-      return {
-        ...ticket,
-        ...event,
-      }
-    })
-    setTickets(ticketsWithDetails.filter(Boolean))
+    interface Ticket {
+      id: string
+      attendee_id: string
+      event_id: string
+      ticket_code: string
+      purchase_date: string
+      status: string
+      price_paid: number
+    }
+
+    interface EventWithVenue {
+      name: string
+      event_date: string
+      start_time: string
+      end_time: string
+      venue_name: string
+      venue_location: string
+      organizer_name: string
+      description?: string
+    }
+
+    const fetchTickets = async () => {
+      const ticketData: Ticket[] = await DataStore.getTicketsByAttendee(attendeeId)
+
+      const ticketsWithDetails = (
+        await Promise.all(
+          ticketData.map(async (ticket: Ticket) => {
+            const event = await DataStore.getEventWithVenue(ticket.event_id)
+            if (!event) return null
+            return {
+              ...ticket,
+              ...event,
+            }
+          })
+        )
+      ).filter((t): t is NonNullable<typeof t> => t !== null)
+      setTickets(ticketsWithDetails)
+    }
+
+    fetchTickets()
   }, [attendeeId])
 
   const getTicketStatus = (ticket: any) => {
